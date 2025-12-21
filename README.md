@@ -12,7 +12,7 @@
 <a name="english"></a>
 ## 🚀 Project Overview
 
-A professional-grade, multi-market automated monitoring and data warehousing system. It performs large-scale data scraping and matrix analysis across **6 major global markets**. The system visualizes market breadth and momentum through a **3x3 Rolling Distribution Matrix**, delivering interactive daily reports via Resend API and maintaining a 10-25 year historical SQLite database.
+A professional-grade, multi-market automated monitoring and data warehousing system. It performs large-scale data scraping and matrix analysis across **6 major global markets**. The system visualizes market breadth and momentum through a **3x3 Rolling Distribution Matrix**, delivering interactive daily reports via Resend API.
 
 ### 🌎 Monitored Markets
 - 🇹🇼 **Taiwan (TW)**: TWSE/TPEx All-share (Stock, ETF, Emerging).
@@ -33,7 +33,7 @@ A professional-grade, multi-market automated monitoring and data warehousing sys
 <a name="中文"></a>
 ## 🚀 專案概述
 
-這是一個專業級的多國自動化監控與數據倉庫系統，針對 **全球 6 大主要市場** 執行大規模數據爬取與矩陣分析。系統透過 **3x3 滾動分佈矩陣** 視覺化市場寬度與動能，並自動維護一個具備 10-25 年歷史深度的 SQLite 資料庫，每日透過 Resend API 寄送互動式電子郵件報表。
+這是一個專業級的多國自動化監控與數據倉庫系統，針對 **全球 6 大主要市場** 執行大規模數據爬取與矩陣分析。系統透過 **3x3 滾動分佈矩陣** 視覺化市場寬度與動能，每日透過 Resend API 寄送互動式電子郵件報表。
 
 ### 🌎 監控市場
 - 🇹🇼 **台灣 (TW)**：上市、上櫃、興櫃、ETF 全股票覆蓋。
