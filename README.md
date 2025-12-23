@@ -65,6 +65,21 @@ A professional-grade, multi-market automated monitoring and data warehousing sys
 - **Visualization**: Matplotlib, Numpy
 - **Automation**: GitHub Actions (Matrix Strategy)
 - **Cloud Sync**: Google Drive API
+
+## 🚀 快速上手教學 (方格子專文)
+
+如果你是初學者，或是想在 5 分鐘內快速完成設定，請參考這篇詳細的圖文教學：
+👉 [**【教學】如何獲取 Resend API Key 並設定 GitHub 變數**](https://vocus.cc/article/694a52fcfd89780001b9f09b)
+
+### 只要三步即可運作：
+1. **註冊 Resend**：獲取 API Key（初學者可直接使用預設的 `onboarding@resend.dev` 寄件帳號）。
+2. **設定 GitHub Secrets**：在 Repo 的 Settings 中新增變數 `RESEND_API_KEY` 與 `REPORT_RECEIVER_EMAIL`。
+3. **啟動 Actions**：手動或依排程啟動，即可在信箱收到精美的台股監控報表。
+
+
+
+
+
 ------------------------------------------------------------------------------------------------------------------------------
 
 ⚠️ Data Integrity & Learning Note (資料完整性與練習說明)
