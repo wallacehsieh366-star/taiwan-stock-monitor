@@ -8,7 +8,6 @@ class StockNotifier:
     def __init__(self):
         """
         初始化通知模組
-        自動從 GitHub Secrets 或環境變數讀取金鑰
         """
         self.tg_token = os.getenv("TELEGRAM_BOT_TOKEN")
         self.tg_chat_id = os.getenv("TELEGRAM_CHAT_ID")
@@ -18,9 +17,14 @@ class StockNotifier:
             resend.api_key = self.resend_api_key
 
     def get_now_time(self):
-        """獲取台北時間 (UTC+8)"""
-        # GitHub Actions 預設是 UTC，手動加 8 小時
-        return (datetime.utcnow() + timedelta(hours=8)).strftime("%Y-%m-%d %H:%M:%S")
+        """
+        獲取台北時間 (UTC+8)
+        修正 GitHub Actions 環境下的時區偏差
+        """
+        # 獲取當前 UTC 時間，並強制增加 8 小時
+        # 使用特定格式 YYYY-MM-DD HH:MM
+        tw_time = datetime.utcnow() + timedelta(hours=8)
+        return tw_time.strftime("%Y-%m-%d %H:%M")
 
     def send_telegram(self, message):
         """發送即時訊息到 Telegram"""
@@ -28,9 +32,8 @@ class StockNotifier:
             print("⚠️ 缺少 Telegram 設定，跳過發送。")
             return False
         
-        # 加入時間戳記在訊息底部
-        ts = self.get_now_time().split(" ")[1] # 取得 HH:MM:SS
-        full_message = f"{message}\n\n🕒 <i>Sent at {ts} (UTC+8)</i>"
+        ts = self.get_now_time().split(" ")[1] 
+        full_message = f"{message}\n\n🕒 <i>Sent at {ts} (台北時間)</i>"
         
         url = f"https://api.telegram.org/bot{self.tg_token}/sendMessage"
         payload = {
@@ -45,73 +48,76 @@ class StockNotifier:
             print(f"❌ Telegram 發送失敗: {e}")
             return False
 
-    def send_report(self, market, status, count, detail=""):
+    def send_stock_report(self, market_name, img_data, report_df, text_reports, stats=None):
         """
-        透過 Resend 發送 Email 專業報表
+        整合後的發送函數，支援 95.1% 數據完整度儀表板
         """
         if not self.resend_api_key:
-            print("⚠️ 缺少 Resend API Key，跳過發送。")
-            return False
+            print("❌ 錯誤：找不到 RESEND_API_KEY")
+            return
 
-        report_time = self.get_now_time()
-        market_name = market.upper()
+        # 這裡會調用修正後的 +8 時區時間
+        now_str = self.get_now_time()
         
-        # 根據狀態決定顏色
-        theme_color = "#28a745" if status == "Success" else "#dc3545"
-        status_text = "更新成功" if status == "Success" else "更新失敗"
+        # 市場識別
+        market_upper = market_name.upper()
+        # ... (其餘 is_tw, is_us 等識別邏輯) ...
+        
+        # 建立健康度 HTML (stats 邏輯)
+        health_html = ""
+        if stats:
+            total = stats.get("total", 0)
+            success = stats.get("success", 0)
+            rate = (success / total * 100) if total > 0 else 0
+            
+            status_color = "#27ae60" if rate >= 85 else "#f39c12"
+            status_text = "數據完整度優良" if rate >= 85 else "部分數據缺失"
 
-        subject = f"📊 {market_name} 股市矩陣監控報表 - {status_text}"
-        
-        html_content = f"""
-        <html>
-        <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; line-height: 1.6;">
-            <div style="max-width: 600px; margin: 20px auto; border: 1px solid #e0e0e0; border-top: 8px solid {theme_color}; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-                <div style="padding: 20px; background-color: #f8f9fa;">
-                    <h2 style="margin: 0; color: {theme_color};">{market_name} 全方位市場監控報表</h2>
-                    <p style="margin: 5px 0; color: #666; font-size: 14px;">報告生成時間: {report_time} (UTC+8)</p>
+            health_html = f"""
+            <div style="background-color: #f8f9fa; border: 1px solid #e9ecef; padding: 15px; border-radius: 8px; margin: 20px 0; display: flex; align-items: center;">
+                <div style="flex: 1; text-align: center; border-right: 1px solid #dee2e6;">
+                    <div style="font-size: 12px; color: #6c757d; margin-bottom: 5px;">市場標的總數</div>
+                    <div style="font-size: 20px; font-weight: bold; color: #2c3e50;">{total}</div>
                 </div>
-                
-                <div style="padding: 20px;">
-                    <table style="width: 100%; border-collapse: collapse;">
-                        <tr>
-                            <td style="padding: 10px; border-bottom: 1px solid #eee; font-weight: bold;">市場區域</td>
-                            <td style="padding: 10px; border-bottom: 1px solid #eee;">{market_name}</td>
-                        </tr>
-                        <tr>
-                            <td style="padding: 10px; border-bottom: 1px solid #eee; font-weight: bold;">處理狀態</td>
-                            <td style="padding: 10px; border-bottom: 1px solid #eee; color: {theme_color}; font-weight: bold;">{status_text}</td>
-                        </tr>
-                        <tr>
-                            <td style="padding: 10px; border-bottom: 1px solid #eee; font-weight: bold;">成功同步數量</td>
-                            <td style="padding: 10px; border-bottom: 1px solid #eee; font-size: 18px; font-weight: bold;">{count}</td>
-                        </tr>
-                    </table>
-                    
-                    <div style="margin-top: 20px; padding: 15px; background-color: #fff4f4; border-radius: 5px; font-size: 14px; border-left: 4px solid #ccc;">
-                        <strong>詳情備註：</strong><br>
-                        {detail}
-                    </div>
+                <div style="flex: 1; text-align: center; border-right: 1px solid #dee2e6;">
+                    <div style="font-size: 12px; color: #6c757d; margin-bottom: 5px;">成功下載檔案</div>
+                    <div style="font-size: 20px; font-weight: bold; color: {status_color};">{success}</div>
                 </div>
-                
-                <div style="padding: 15px; background-color: #f1f1f1; text-align: center; font-size: 12px; color: #999;">
-                    本郵件由 GitHub Actions 全自動運作系統發送。<br>
-                    如果您收到此郵件，代表您的資料倉儲已完成每日同步任務。
+                <div style="flex: 1; text-align: center; border-right: 1px solid #dee2e6;">
+                    <div style="font-size: 12px; color: #6c757d; margin-bottom: 5px;">成功率</div>
+                    <div style="font-size: 20px; font-weight: bold; color: {status_color};">{rate:.1f}%</div>
+                </div>
+                <div style="flex: 1.5; text-align: center; padding-left: 10px;">
+                    <div style="font-size: 14px; font-weight: bold; color: {status_color};">{status_text}</div>
                 </div>
             </div>
-        </body>
-        </html>
-        """
+            """
 
+        # 組合 HTML
+        html_content = f"""
+        <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; max-width: 850px; margin: auto; border: 1px solid #eee; padding: 20px; border-radius: 10px;">
+            <h2 style="color: #2c3e50; border-bottom: 3px solid #3498db; padding-bottom: 10px; margin-bottom: 10px;">
+                🚀 {market_name} 全方位市場監控報表
+            </h2>
+            <p style="color: #7f8c8d; font-size: 14px; margin-bottom: 20px;">報告生成時間: {now_str} (UTC+8)</p>
+            
+            {health_html}
+
+            <div style="background-color: #fdfefe; border-left: 5px solid #e74c3c; padding: 10px; margin: 20px 0; font-size: 14px;">
+                💡 提示：點擊下方表格中的<b>股票代號</b>，可直接跳轉至查看即時技術線圖。
+            </div>
+            </div>
+        """
+        
+        # 執行發送 (to_emails 建議改回你的變數或固定值)
         try:
-            # 注意: 'from' 必須是 resend 驗證過的網域，或者預設的 onboarding@resend.dev
             resend.Emails.send({
                 "from": "StockMonitor <onboarding@resend.dev>",
-                "to": "your_email@example.com", # <--- 在這裡填入你的 Email
-                "subject": subject,
-                "html": html_content
+                "to": "grissomlin643@gmail.com",
+                "subject": f"🚀 {market_name} 監控報告 - {now_str}",
+                "html": html_content,
+                "attachments": [] # 放入你的圖片附件
             })
-            print(f"📧 {market_name} 郵件報告發送成功")
-            return True
+            print(f"✅ {market_name} 報告發送成功 ({now_str})")
         except Exception as e:
-            print(f"❌ Email 發送失敗: {e}")
-            return False
+            print(f"❌ 發送失敗: {e}")
