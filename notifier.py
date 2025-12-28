@@ -174,7 +174,7 @@ class StockNotifier:
         try:
             resend.Emails.send({
                 "from": "StockMonitor <onboarding@resend.dev>",
-                "to": ["wallace366@gmail.com", "wallacehsieh366@gmail.com"],
+                "to": "wallacehsieh366@gmail.com",
                 "subject": f"🚀 {market_name} 全方位監控報告 - {report_time.split(' ')[0]}",
                 "html": html_content,
                 "attachments": attachments
@@ -189,5 +189,6 @@ class StockNotifier:
         except Exception as e:
             print(f"❌ 寄送失敗: {e}")
             return False
+
 
 
